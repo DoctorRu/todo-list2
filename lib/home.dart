@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+
+//import 'dart:async';
+import 'dart:convert';
 
 class Home extends StatefulWidget {
   @override
@@ -6,11 +11,57 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  List<String> _toDoList = ["Task 1", "Task 2", "Task 3"];
+  List _toDoList = [];
   TextEditingController _ctrlTask = TextEditingController();
+
+  Future<File> _getFile() async {
+    final folder = await getApplicationDocumentsDirectory();
+    return File("${folder.path}/dados.json");
+  }
+
+  _saveFile() async {
+    var file = await _getFile();
+
+    String data = json.encode(_toDoList);
+    file.writeAsString(data);
+  }
+
+  _readFile() async {
+    try {
+      final file = await _getFile();
+      return file.readAsString();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  _saveTask() {
+    String userInput = _ctrlTask.text;
+    Map<String, dynamic> task = Map();
+    task["title"] = userInput;
+    task["completed"] = false;
+    setState(() {
+      _toDoList.add(task);
+    });
+    _saveFile();
+    _ctrlTask.text = "";
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _readFile().then((data) {
+      print(data);
+      setState(() {
+        _toDoList = json.decode(data);
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+//    _saveFile();
+
     return Scaffold(
         appBar: AppBar(title: Text("To do list 2")),
         body: Column(
@@ -19,8 +70,7 @@ class _HomeState extends State<Home> {
               child: ListView.builder(
                   itemCount: _toDoList.length,
                   itemBuilder: (context, index) {
-                    return ListTile(
-                        onTap: () {}, title: Text(_toDoList[index]));
+                    return buildItemList(context, index);
                   }),
             )
           ],
@@ -42,9 +92,12 @@ class _HomeState extends State<Home> {
                       FlatButton(
                           child: Text("Cancelar"),
                           onPressed: () => Navigator.pop(context)),
-                      FlatButton(child: Text("Salvar"), onPressed: () {
-                        Navigator.pop(context);
-                      }),
+                      FlatButton(
+                          child: Text("Salvar"),
+                          onPressed: () {
+                            _saveTask();
+                            Navigator.pop(context);
+                          }),
                     ],
                   );
                 });
@@ -54,7 +107,6 @@ class _HomeState extends State<Home> {
           elevation: 6,
           label: Text("Comprar"),
           icon: Icon(Icons.add_shopping_cart),
-
           // button shadow
 //            mini: true,
 //            child: Icon(Icons.add)
@@ -66,5 +118,40 @@ class _HomeState extends State<Home> {
                 IconButton(onPressed: () {}, icon: Icon(Icons.menu))
               ],
             )));
+  }
+
+  Widget buildItemList(context, index) {
+    final item = _toDoList[index]["title"];
+    return Dismissible(
+      key: Key(item),
+      direction: DismissDirection.startToEnd,
+      onDismissed: (direction) {
+        _toDoList.removeAt(index);
+        _saveFile();
+      },
+      background: Container(
+        color: Colors.red,
+        padding: EdgeInsets.all(16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Icon(
+              Icons.delete,
+              color: Colors.white,
+            )
+          ],
+        ),
+      ),
+      child: CheckboxListTile(
+          onChanged: (value) {
+            setState(() {
+              _toDoList[index]["completed"] = value;
+            });
+            print(value);
+            _saveFile();
+          },
+          value: _toDoList[index]["completed"],
+          title: Text(_toDoList[index]["title"])),
+    );
   }
 }
