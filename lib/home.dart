@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-
-//import 'dart:async';
 import 'dart:convert';
 
 class Home extends StatefulWidget {
@@ -12,6 +10,8 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List _toDoList = [];
+  Map<String, dynamic> _removedTask = Map();
+
   TextEditingController _ctrlTask = TextEditingController();
 
   Future<File> _getFile() async {
@@ -105,8 +105,8 @@ class _HomeState extends State<Home> {
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
           elevation: 6,
-          label: Text("Comprar"),
-          icon: Icon(Icons.add_shopping_cart),
+          label: Text("Nova tarefa"),
+          icon: Icon(Icons.add),
           // button shadow
 //            mini: true,
 //            child: Icon(Icons.add)
@@ -123,11 +123,31 @@ class _HomeState extends State<Home> {
   Widget buildItemList(context, index) {
     final item = _toDoList[index]["title"];
     return Dismissible(
-      key: Key(item),
+      key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
       direction: DismissDirection.startToEnd,
       onDismissed: (direction) {
+        // Mantém uma copia temporária do item removido caso ocorra um desfazer
+        _removedTask = _toDoList[index];
         _toDoList.removeAt(index);
         _saveFile();
+
+        final snackbar = SnackBar(
+          content: Text("Tarefa removida"),
+          duration: Duration(seconds: 3),
+          action: SnackBarAction(
+            label: "Desfazer",
+            textColor: Colors.white,
+            onPressed: () {
+              setState(() {
+                _toDoList.insert(index, _removedTask);
+              });
+              _saveFile();
+            },
+          ),
+          backgroundColor: Colors.green,
+        );
+
+        Scaffold.of(context).showSnackBar(snackbar);
       },
       background: Container(
         color: Colors.red,

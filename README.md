@@ -1,4 +1,14 @@
 # To do List 2
 
-Simple To do list app
+Lista de tarefas básica.
+
+Recursos:
++ Alert dialog
++ Dismissable
++ Local storage
++ CheckboxListTile
++ Snackbar
++ bottomNavigationBar / BottomAppBar
++ floatingActionButtonLocation
+
 
